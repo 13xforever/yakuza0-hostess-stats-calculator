@@ -54,7 +54,8 @@ namespace Yakuza0DressupMaximizer
 
             Console.WriteLine("Calculating outfits...");
             var maxScore = int.MinValue;
-            var outfits = new List<Dictionary<string, Item>>();
+            var outfits = new Dictionary<(int s, int b, int c, int f), List<(long cost, Dictionary<string, Item> outfit)>>();
+            var minOutfitCost = new Dictionary<(int s, int b, int c, int f), (long min, long upper)>();
             var dresses = lookup["DRESS"];
             var hairs = lookup["HAIR"];
             var hairAccessories = lookup["HAIRACC"];
@@ -81,7 +82,7 @@ namespace Yakuza0DressupMaximizer
             foreach (var dc in dressColors.Values)
             {
                 var s = GetScore(d, h, ha, g, e, nl, n, r, w, b, p, dc);
-                if (s >= maxScore)
+                if (s.total >= maxScore)
                 {
                     var outfit = new Dictionary<string, Item>
                     {
@@ -98,12 +99,28 @@ namespace Yakuza0DressupMaximizer
                         ["PERFUME"] = p,
                         ["DRESS_COLOR"] = dc,
                     };
-                    if (s > maxScore)
+                    if (s.total > maxScore)
                     {
                         outfits.Clear();
-                        maxScore = s;
+                        minOutfitCost.Clear();
+                        maxScore = s.total;
                     }
-                    outfits.Add(outfit);
+                    if (!minOutfitCost.TryGetValue(s.stats, out var minCost))
+                        minOutfitCost[s.stats] = minCost = (long.MaxValue, long.MaxValue);
+                    if (s.cost > minCost.upper)
+                        continue;
+
+                    if (!outfits.TryGetValue(s.stats, out var outfitList))
+                        outfits[s.stats] = outfitList = new List<(long cost, Dictionary<string, Item> outfit)>();
+                    if (s.cost < minCost.min)
+                    {
+                        var newMin = s.cost;
+                        var newUpper = (long)(s.cost * 1.1);
+                        minOutfitCost[s.stats] = (newMin, newUpper);
+                        var newOutfitList = outfitList.Where(o => o.cost < newUpper).ToList();
+                        outfits[s.stats] = outfitList = newOutfitList;
+                    }
+                    outfitList.Add((s.cost, outfit));
                 }
             }
 
@@ -112,44 +129,36 @@ namespace Yakuza0DressupMaximizer
             using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
             {
                 writer.WriteLine("Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet;Perfume;Dress Color");
-                foreach (var o in outfits)
+                foreach (var oc in outfits)
+                foreach (var os in oc.Value.OrderBy(i => i.cost))
                 {
-                    int s, b, c, f;
-                    s = b = c = f = 0;
-                    long cost = 0L;
-                    foreach (var i in o.Values)
-                    {
-                        s += i.Sexy;
-                        b += i.Beauty;
-                        c += i.Cuty;
-                        f += i.Funny;
-                        cost += i.Buy;
-                    }
-                    s = Math.Clamp(s, 0, 3);
-                    b = Math.Clamp(b, 0, 3);
-                    c = Math.Clamp(c, 0, 3);
-                    f = Math.Clamp(f, 0, 3);
-                    writer.WriteLine($"{s};{b};{c};{f};{cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name};{o["PERFUME"].Name};{o["DRESS_COLOR"].Name}");
+                    var s = oc.Key;
+                    var o = os.outfit;
+                    writer.WriteLine($"{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name};{o["PERFUME"].Name};{o["DRESS_COLOR"].Name}");
                 }
             }
             Console.WriteLine("Done.");
             return 0;
         }
 
-        private static int GetScore(params Item[] items)
+        private static (int total, (int s, int b, int c, int f) stats, long cost) GetScore(params Item[] items)
         {
-            int s = 0, b = 0, c = 0, f = 0;
-            foreach (var item in items)
+            int s, b, c, f;
+            s = b = c = f = 0;
+            long cost = 0L;
+            foreach (var i in items)
             {
-                s += item.Sexy;
-                b += item.Beauty;
-                c += item.Cuty;
-                f += item.Funny;
+                s += i.Sexy;
+                b += i.Beauty;
+                c += i.Cuty;
+                f += i.Funny;
+                cost += i.Buy;
             }
-            return Math.Clamp(s, 0, 3) +
-                   Math.Clamp(b, 0, 3) +
-                   Math.Clamp(c, 0, 3) +
-                   Math.Clamp(f, 0, 3);
+            s = Math.Clamp(s, 0, 3);
+            b = Math.Clamp(b, 0, 3);
+            c = Math.Clamp(c, 0, 3);
+            f = Math.Clamp(f, 0, 3);
+            return (s + b + c + f, (s, b, c, f), cost);
         }
     }
 
