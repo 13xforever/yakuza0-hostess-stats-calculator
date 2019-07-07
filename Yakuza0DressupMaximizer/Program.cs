@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +13,7 @@ namespace Yakuza0DressupMaximizer
     {
         internal static int Main(string[] args)
         {
+            var stopwatch = Stopwatch.StartNew();
             var a = Assembly.GetExecutingAssembly();
             var resourceNames = a.GetManifestResourceNames();
             var statsName = resourceNames.FirstOrDefault(s => s.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase));
@@ -38,7 +40,6 @@ namespace Yakuza0DressupMaximizer
                 ["RING"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "RING" } },
                 ["WATCH"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "WATCH" } },
                 ["BRACELET"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "BRACELET" } },
-                ["DRESS_COLOR"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "DRESS_COLOR" } },
             };
             foreach (var i in dressUpItems.Where(p => p.Key != "types").Select(p => p.Value))
             {
@@ -51,8 +52,7 @@ namespace Yakuza0DressupMaximizer
             }
 
             Console.WriteLine("Calculating outfits...");
-            var maxScore = int.MinValue;
-            var outfits = new Dictionary<(int s, int b, int c, int f), List<(long cost, Dictionary<string, Item> outfit)>>();
+            var outfits = new Dictionary<int, Dictionary<(int s, int b, int c, int f), List<(long cost, Dictionary<string, Item> outfit)>>>();
             var minOutfitCost = new Dictionary<(int s, int b, int c, int f), (long min, long upper)>();
             var dresses = lookup["DRESS"];
             var hairs = lookup["HAIR"];
@@ -64,7 +64,6 @@ namespace Yakuza0DressupMaximizer
             var rings = lookup["RING"];
             var watches = lookup["WATCH"];
             var bracelets = lookup["BRACELET"];
-            var dressColors = lookup["DRESS_COLOR"];
             foreach (var d in dresses.Values)
             foreach (var h in hairs.Values)
             foreach (var ha in hairAccessories.Values)
@@ -75,61 +74,57 @@ namespace Yakuza0DressupMaximizer
             foreach (var r in rings.Values)
             foreach (var w in watches.Values)
             foreach (var b in bracelets.Values)
-            foreach (var dc in dressColors.Values)
             {
-                var s = GetScore(d, h, ha, g, e, nl, n, r, w, b, dc);
-                if (s.total >= maxScore)
-                {
-                    var outfit = new Dictionary<string, Item>
-                    {
-                        ["DRESS"] = d,
-                        ["HAIR"] = h,
-                        ["HAIRACC"] = ha,
-                        ["GLASSES"] = g,
-                        ["EARRING"] = e,
-                        ["NECKLACE"] = nl,
-                        ["NAIL"] = n,
-                        ["RING"] = r,
-                        ["WATCH"] = w,
-                        ["BRACELET"] = b,
-                        ["DRESS_COLOR"] = dc,
-                    };
-                    if (s.total > maxScore)
-                    {
-                        outfits.Clear();
-                        minOutfitCost.Clear();
-                        maxScore = s.total;
-                    }
-                    if (!minOutfitCost.TryGetValue(s.stats, out var minCost))
-                        minOutfitCost[s.stats] = minCost = (long.MaxValue, long.MaxValue);
-                    if (s.cost > minCost.upper)
-                        continue;
+                var s = GetScore(d, h, ha, g, e, nl, n, r, w, b);
+                if (s.total < 7)
+                    continue;
 
-                    if (!outfits.TryGetValue(s.stats, out var outfitList))
-                        outfits[s.stats] = outfitList = new List<(long cost, Dictionary<string, Item> outfit)>();
-                    if (s.cost < minCost.min)
-                    {
-                        var newMin = s.cost;
-                        var newUpper = (long)(s.cost * 1.1);
-                        minOutfitCost[s.stats] = (newMin, newUpper);
-                        var newOutfitList = outfitList.Where(o => o.cost < newUpper).ToList();
-                        outfits[s.stats] = outfitList = newOutfitList;
-                    }
-                    outfitList.Add((s.cost, outfit));
+                if (!outfits.TryGetValue(s.total, out var outfitsPerScore))
+                    outfits[s.total] = outfitsPerScore = new Dictionary<(int s, int b, int c, int f), List<(long cost, Dictionary<string, Item> outfit)>>();
+
+                var outfit = new Dictionary<string, Item>
+                {
+                    ["DRESS"] = d,
+                    ["HAIR"] = h,
+                    ["HAIRACC"] = ha,
+                    ["GLASSES"] = g,
+                    ["EARRING"] = e,
+                    ["NECKLACE"] = nl,
+                    ["NAIL"] = n,
+                    ["RING"] = r,
+                    ["WATCH"] = w,
+                    ["BRACELET"] = b,
+                };
+                if (!minOutfitCost.TryGetValue(s.stats, out var minCost))
+                    minOutfitCost[s.stats] = minCost = (long.MaxValue, long.MaxValue);
+                if (s.cost > minCost.upper)
+                    continue;
+
+                if (!outfitsPerScore.TryGetValue(s.stats, out var outfitList))
+                    outfitsPerScore[s.stats] = outfitList = new List<(long cost, Dictionary<string, Item> outfit)>();
+                if (s.cost < minCost.min)
+                {
+                    var newMin = s.cost;
+                    var newUpper = (long)(s.cost * 1.1);
+                    minOutfitCost[s.stats] = (newMin, newUpper);
+                    var newOutfitList = outfitList.Where(o => o.cost < newUpper).ToList();
+                    outfitsPerScore[s.stats] = outfitList = newOutfitList;
                 }
+                outfitList.Add((s.cost, outfit));
             }
 
-            Console.WriteLine($"Best score: {maxScore}, total combinations: {outfits.Count}");
+            Console.WriteLine($"Best score: {outfits.Keys.Max()}, time: {stopwatch.Elapsed:g}");
             using (var output = File.Open(@".\results.csv", FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
             {
-                writer.WriteLine("Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet;Dress Color");
-                foreach (var oc in outfits)
+                writer.WriteLine("Total Score;Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet");
+                foreach (var ol in outfits)
+                foreach (var oc in ol.Value)
                 foreach (var os in oc.Value.OrderBy(i => i.cost))
                 {
                     var s = oc.Key;
                     var o = os.outfit;
-                    writer.WriteLine($"{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name};{o["DRESS_COLOR"].Name}");
+                    writer.WriteLine($"{ol.Key};{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name}");
                 }
             }
             Console.WriteLine("Done.");
