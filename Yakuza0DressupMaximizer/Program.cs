@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Yakuza0DressupMaximizer
 {
@@ -39,7 +38,6 @@ namespace Yakuza0DressupMaximizer
                 ["RING"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "RING" } },
                 ["WATCH"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "WATCH" } },
                 ["BRACELET"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "BRACELET" } },
-                ["PERFUME"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "PERFUME" } },
                 ["DRESS_COLOR"] = new Dictionary<string, Item> { ["None"] = new Item{ Name = "None", Kind = "DRESS_COLOR" } },
             };
             foreach (var i in dressUpItems.Where(p => p.Key != "types").Select(p => p.Value))
@@ -47,9 +45,9 @@ namespace Yakuza0DressupMaximizer
                 if (!lookup.TryGetValue(i.Kind, out var category))
                     lookup[i.Kind] = category = new Dictionary<string, Item>();
 
-                var baseItemName = i.Name[i.Name.Length - 2] == ' ' ? i.Name.Substring(0, i.Name.Length - 2) : i.Name;
-                if (!category.TryGetValue(baseItemName, out var itm))
-                    category[baseItemName] = i;
+                i.Name = i.Name[i.Name.Length - 2] == ' ' ? i.Name.Substring(0, i.Name.Length - 2) : i.Name;
+                if (!category.ContainsKey(i.Name))
+                    category[i.Name] = i;
             }
 
             Console.WriteLine("Calculating outfits...");
@@ -66,7 +64,6 @@ namespace Yakuza0DressupMaximizer
             var rings = lookup["RING"];
             var watches = lookup["WATCH"];
             var bracelets = lookup["BRACELET"];
-            var perfumes = lookup["PERFUME"];
             var dressColors = lookup["DRESS_COLOR"];
             foreach (var d in dresses.Values)
             foreach (var h in hairs.Values)
@@ -78,10 +75,9 @@ namespace Yakuza0DressupMaximizer
             foreach (var r in rings.Values)
             foreach (var w in watches.Values)
             foreach (var b in bracelets.Values)
-            foreach (var p in perfumes.Values)
             foreach (var dc in dressColors.Values)
             {
-                var s = GetScore(d, h, ha, g, e, nl, n, r, w, b, p, dc);
+                var s = GetScore(d, h, ha, g, e, nl, n, r, w, b, dc);
                 if (s.total >= maxScore)
                 {
                     var outfit = new Dictionary<string, Item>
@@ -96,7 +92,6 @@ namespace Yakuza0DressupMaximizer
                         ["RING"] = r,
                         ["WATCH"] = w,
                         ["BRACELET"] = b,
-                        ["PERFUME"] = p,
                         ["DRESS_COLOR"] = dc,
                     };
                     if (s.total > maxScore)
@@ -128,13 +123,13 @@ namespace Yakuza0DressupMaximizer
             using (var output = File.Open(@".\results.csv", FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
             {
-                writer.WriteLine("Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet;Perfume;Dress Color");
+                writer.WriteLine("Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet;Dress Color");
                 foreach (var oc in outfits)
                 foreach (var os in oc.Value.OrderBy(i => i.cost))
                 {
                     var s = oc.Key;
                     var o = os.outfit;
-                    writer.WriteLine($"{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name};{o["PERFUME"].Name};{o["DRESS_COLOR"].Name}");
+                    writer.WriteLine($"{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name};{o["DRESS_COLOR"].Name}");
                 }
             }
             Console.WriteLine("Done.");
