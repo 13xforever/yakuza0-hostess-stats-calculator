@@ -61,11 +61,27 @@ namespace Yakuza0DressupMaximizer
                     category[i.Name] = i;
             }
 
+            var mergedLookup = new Dictionary<string, Dictionary<string, Item>>();
+            foreach (var lookupCategory in lookup)
+            {
+                var mergedList = from i in lookupCategory.Value.Values
+                    let k = (stats: (i.Sexy, i.Beauty, i.Cuty, i.Funny), item: i)
+                    group k by k.stats
+                    into g
+                    let gl = g.OrderBy(itm => itm.item.Buy).Select(itm => itm.item)
+                    let gn = string.Join(" / ", gl.Select(itm => itm.Name))
+                    let gi = gl.First()
+                    select new Item {Kind = gi.Kind, Name = gn, Buy = gi.Buy, Sexy = gi.Sexy, Beauty = gi.Beauty, Cuty = gi.Cuty, Funny = gi.Funny};
+
+                mergedLookup[lookupCategory.Key] = mergedList.ToDictionary(i => i.Name, i => i);
+            }
+            lookup = mergedLookup;
+
             var hostesses = lookup["HOSTESS"];
             using (var output = File.Open(@".\results.csv", FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
             {
-                writer.WriteLine("Hostess;Total Score;Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet");
+                writer.WriteLine("Hostess;Sexy;Beauty;Cute;Funny;Cost;Dress;Hair;Hair Accessory;Glasses;Earring;Necklace;Nail;Ring;Watch;Bracelet");
                 foreach (var hostess in hostesses.Values)
                 {
                     Console.WriteLine($"Calculating outfits for {hostess.Name}...");
@@ -151,7 +167,7 @@ namespace Yakuza0DressupMaximizer
                     {
                         var s = oc.Key;
                         var o = os.outfit;
-                        writer.WriteLine($"{hostess.Name};{ol.Key};{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name}");
+                        writer.WriteLine($"{hostess.Name};{s.s};{s.b};{s.c};{s.f};{os.cost};{o["DRESS"].Name};{o["HAIR"].Name};{o["HAIRACC"].Name};{o["GLASSES"].Name};{o["EARRING"].Name};{o["NECKLACE"].Name};{o["NAIL"].Name};{o["RING"].Name};{o["WATCH"].Name};{o["BRACELET"].Name}");
                     }
                 }
             }
