@@ -1,0 +1,14 @@
+[
+    {
+        "outputFileName": "calculator.min.js",
+        "inputFiles": [
+            "src/*.js"
+        ]
+    },
+    {
+        "outputFileName": "calculator.min.css",
+        "inputFiles": [
+            "src/*.css"
+        ]
+    }
+]
