@@ -3,7 +3,8 @@
         "module": "amd",
         "target": "es2016",
         "jsx": "preserve",
-        "outFile": "calculator.js"
+        "outFile": "calculator.js",
+        "allowSyntheticDefaultImports": true
     },
     "compileOnSave": true,
     "exclude": [
