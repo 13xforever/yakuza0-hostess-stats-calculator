@@ -46,7 +46,7 @@ namespace Yakuza0DressupMaximizer
                     ["Chika"] = new Item {Name = "Chika", Kind = "HOSTESS", Sexy = 2, Beauty = 3, Cuty = 1, Funny = 0},
 
                     ["Ai"] = new Item {Name = "Ai", Kind = "HOSTESS", Sexy = 1, Beauty = 1, Cuty = 2, Funny = 2},
-
+                    ["Hibiki"] = new Item {Name = "Hibiki", Kind = "HOSTESS", Sexy = 3, Beauty = 2, Cuty = 1, Funny = 0},
                     ["Saki"] = new Item {Name = "Saki", Kind = "HOSTESS", Sexy = 1, Beauty = 2, Cuty = 1, Funny = 2},
                 }
             };
