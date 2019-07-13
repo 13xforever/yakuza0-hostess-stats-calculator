@@ -44,7 +44,10 @@ namespace Yakuza0DressupMaximizer
                 {
                     ["Yuki"] = new Item {Name = "Yuki", Kind = "HOSTESS", Sexy = -1, Beauty = 2, Cuty = 2, Funny = 1},
                     ["Chika"] = new Item {Name = "Chika", Kind = "HOSTESS", Sexy = 2, Beauty = 3, Cuty = 1, Funny = 0},
+
                     ["Ai"] = new Item {Name = "Ai", Kind = "HOSTESS", Sexy = 1, Beauty = 1, Cuty = 2, Funny = 2},
+
+                    ["Saki"] = new Item {Name = "Saki", Kind = "HOSTESS", Sexy = 1, Beauty = 2, Cuty = 1, Funny = 2},
                 }
             };
             foreach (var i in dressUpItems.Where(p => p.Key != "types").Select(p => p.Value))
