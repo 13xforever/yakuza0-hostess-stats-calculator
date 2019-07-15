@@ -10,12 +10,19 @@ define("item", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("init", ["require", "exports", "jquery"], function (require, exports, jquery_1) {
+define("data_loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var calculators;
-    var initialized = false;
-    let itemList;
+    exports.ItemList = {
+        "HAIRACC": { "None": { "NAME": "None", "KIND": "HAIRACC", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "GLASSES": { "None": { "NAME": "None", "KIND": "GLASSES", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "EARRING": { "None": { "NAME": "None", "KIND": "EARRING", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "NECKLACE": { "None": { "NAME": "None", "KIND": "NECKLACE", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "NAIL": { "None": { "NAME": "None", "KIND": "NAIL", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "RING": { "None": { "NAME": "None", "KIND": "RING", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "WATCH": { "None": { "NAME": "None", "KIND": "WATCH", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+        "BRACELET": { "None": { "NAME": "None", "KIND": "BRACELET", "SEXY": 0, "BEAUTY": 0, "CUTY": 0, "FUNNY": 0, "BUY": 0 }, },
+    };
     let hostessList = [
         { "NAME": "Yuki", "KIND": "HOSTESS", "SEXY": -1, "BEAUTY": 2, "CUTY": 2, "FUNNY": 1, "BUY": 0 },
         { "NAME": "Chika", "KIND": "HOSTESS", "SEXY": 2, "BEAUTY": 3, "CUTY": 1, "FUNNY": 0, "BUY": 0 },
@@ -24,14 +31,27 @@ define("init", ["require", "exports", "jquery"], function (require, exports, jqu
         { "NAME": "Hibiki", "KIND": "HOSTESS", "SEXY": 3, "BEAUTY": 2, "CUTY": 1, "FUNNY": 0, "BUY": 0 },
         { "NAME": "Saki", "KIND": "HOSTESS", "SEXY": 1, "BEAUTY": 2, "CUTY": 1, "FUNNY": 2, "BUY": 0 },
     ];
-    function init(src) {
+    function InitItemList() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!initialized) {
-                initialized = true;
-                var itemList = yield jquery_1.default.get('caba_item_list.bin_c.json');
+            var items = yield $.get('caba_item_list.bin_c.json');
+        });
+    }
+    exports.InitItemList = InitItemList;
+});
+define("init", ["require", "exports", "data_loader"], function (require, exports, data_loader_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield data_loader_1.InitItemList();
+            for (var k in data_loader_1.ItemList) {
+                console.log(k, data_loader_1.ItemList[k]);
             }
         });
     }
-    document.addEventListener("DOMContentLoaded", () => init("DOMContentLoaded"));
-    window.addEventListener("load", () => init("load"));
+    function main() {
+        $(document).ready(init);
+    }
+    exports.main = main;
 });
+//# sourceMappingURL=calculator.js.map
