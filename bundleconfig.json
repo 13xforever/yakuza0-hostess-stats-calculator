@@ -2,7 +2,7 @@
     {
         "outputFileName": "calculator.min.js",
         "inputFiles": [
-            "src/*.js"
+            "calculator.js"
         ]
     },
     {
